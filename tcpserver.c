@@ -1,13 +1,14 @@
-#include <stdio.h>
 #include <unistd.h>
 
 #include <sys/socket.h>
 
 #include <netinet/in.h>
 
-// gcc tcpclient.c -o client
+// gcc tcpserver.c -o server
 int main()
 {
+    char msg[256] = "message\n";
+
     /* create a socket */
     // AF_INET      IPv4 Internet protocols
     // SOCK_STREAM  Provides sequenced, reliable, two-way, connection-based byte streams
@@ -20,22 +21,19 @@ int main()
     addr.sin_port = htons(1337);
     addr.sin_addr.s_addr = INADDR_ANY;
 
-    int status = connect(s, (struct sockaddr*)&addr, sizeof(addr));
+    // bind the socket to our specified IP and port
+    int status = bind(s, (struct sockaddr*)&addr, sizeof(addr));
 
-    if(status == -1)
-    {
-        perror("Erreur connexion");
-        return -1;
-    }
+    // n is the max number of connections
+    listen(s, 5);
 
-    // receive data from the server
-    char response[256];
-    recv(s, &response, sizeof(response), 0);
+    int client_socket;
+    client_socket = accept(s, 0, 0);
 
-    // print out the response
-    printf("%s", response);
+    // send the message
+    send(client_socket, msg, sizeof(msg), 0);
 
-    // and then close the socket's fd
+    // close the socket's fd
     close(s);
 
     return 0;
