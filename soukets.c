@@ -10,7 +10,7 @@
 #define SOUKETS_CHANNEL_SIZE 2
 #define SOUKETS_MAX_CLIENTS 10
 
-socklen_t SIZEOF_SOCKADR_IN = sizeof(struct sockaddr_in);
+int SIZEOF_SOCKADDR_IN = sizeof(struct sockaddr_in);
 
 // gcc soukets.c -o server
 int main()
@@ -32,16 +32,17 @@ int main()
 
     // while(1)
     // {
-        for(int i = 0; i <= SOUKETS_CHANNEL_SIZE; ++i)
+        for(int i = 0; i < SOUKETS_CHANNEL_SIZE; ++i)
         {
-            clients_fd[nb_clients] = accept(s, (struct sockaddr*)&clients_info[nb_clients], &SIZEOF_SOCKADR_IN);
-            printf("client connected");
+            // clients_fd[nb_clients] = accept(s, 0, 0);
+            clients_fd[nb_clients] = accept(s, (struct sockaddr*)&clients_info[nb_clients], &SIZEOF_SOCKADDR_IN);
+            printf("client connected\n");
             ++nb_clients;
         }
         // je crée un subprocess qui envoie à chaque client
         // du channel un message de bienvenue
-        const char* msg1 = "bonjour client 1\n";
-        const char* msg2 = "bonjour client 2\n";
+        char msg1[20] = "bonjour client 1\n";
+        char msg2[20] = "bonjour client 2\n";
         send(clients_fd[0], &msg1, sizeof(msg1), 0);
         send(clients_fd[1], &msg2, sizeof(msg2), 0);
     // }
