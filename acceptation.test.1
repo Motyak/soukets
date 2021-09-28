@@ -1,0 +1,15 @@
+Prérequis :
+
+Programme qui, en boucle, fait un getline
+puis print l'input précédente, qu'on appelle
+'echo'.
+
+Je tape la commande
+$ ./soukets ./echo
+ce qui a pour effet de créer un socket sur 0.0.0.0:9191
+qui va crée un subprocess dans lequel il lance le programme
+passé en argument (./echo). Lorsqu'un client va envoyé
+un message TCP au serveur, ca va le broadcast à tous les
+clients connectés. Donc on peut faire du pub/sub si on
+fait un format de message qui comprend un nom de channel
+puis le payload (message concret).
