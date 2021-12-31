@@ -1,60 +1,8 @@
-Objectif :
+Programme principal: 
+Un fichier binaire executable qui en boucle va attendre une input
+de stdin, process un resultat et retourner le resultat dans la stdout.
+Il sera passé en argument du serveur TCP.
 
-Faire un outil me permettant de faire, entre autre (réutilisable), un
-serveur pierre feuille ciseaux où chaque joueur possède un temps
-imparti pour jouer son coup (disons 10 secondes), une fois que
-le serveur a reçu le coup de chaque joueur, il va alors envoyer
-le résultat à chaque joueur du canal.
-
-On va dire qu'un canal de communication = un lobby de jeu.
-
-Il faudra que le programme soit réutilisable pour créer des canaux
-de communication messagerie instatanée (un peu comme les websockets)
-et faire en sorte que des clients TCP puissent subscribe/unsubscribe à un
-canal et publish dessus.
-
-Il faudrait que le programme crée dynamiquement des canaux en
-fonction du nombre de joueurs connectés.
-Il y aura donc un lobby principal / une queue.
-Lorsque 2 joueurs sont présents dans la queue, on leur envoie
-le canal de communication.
-
-Pour simuler les canaux de communication, on va juste
-donner un identifiant (généré côté serveur) et demander aux clients
-de l'ajouter en en-tête de message TCP.
-
-____________________________________
-
-EN gros le programme quand je le lance j'indique la taille
-d'un lobby (par exemple 2 pour des parties 1v1) et il va
-dynamiquement créer des canaux de communication lorsque des 
-clients vont rejoindre la queue (lobby principal).
-
-Puis lorsqu'un lobby est complété, un message est envoyé
-à chaque joueur du lobby contenant l'id du canal, pour que
-le prochaines communications soient destinées au/aux
-joueur(s) adverse(s).
-
-ex :
-./soukets --taille-lobby=2 --max-clients=20
-permettra de créer un serveur créant dynamiquement des
-lobbys de 2 clients jusqu'à un total de 20 clients
-en simultané.
-
-
-idée de merde je crois vvv
-exemple de requête TCP envoyée par un client qui se trouve
-dans le lobby '0' :
-"0;{<données JSON>}"
-
-______________________________
-
-Le jeu sera un programme REPL, 
-on passera par CLI au début puis ça sera
-des messages TCP en input et output.
-
-_____________________________
-
-Il faudra faire un "mutex" par fichier
-(exemple fichier lock) pour protéger l'accès
-multiprocess à la variable du nb de clients.
+Faire un serveur tcp qui prend en argument le programme principal,
+qui va rediriger tous les messages TCP reçus vers le programme principal
+et retourne sa réponse en message TCP.

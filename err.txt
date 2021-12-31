@@ -1,8 +1,0 @@
-ERROR on accept: Invalid argument
-parfois quand on fait la première connexion (et ça coupe
-le serveur)
-
-ERROR on accept: Bad file descriptor
-lorsqu'on ferme une connexion client
-(avec le message '\')
-
