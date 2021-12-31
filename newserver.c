@@ -2,74 +2,74 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
+#include <sys/wait.h>
 
-#define OUTPUT_BUFFER_LEN 1024
+#define OUTPUT_BUFFER_LEN 256
 
 enum FileDesc { STDIN, STDOUT, STDERR };
 
 void initialiser(int* inputFd, int* outputFd, char** prog);
-void envoyer(const char* input, char** output);
-void nettoyer();
+void envoyer(const char* msg, int msgLen, char* output);
 
-int inputFd, outputFd;
+int fd_ecriture, fd_lecture;
 char outputBuffer[OUTPUT_BUFFER_LEN];
 
+// ./newserver ./echo
 int main(int argc, char* argv[])
 {
-	initialiser(&inputFd, &outputFd, argv);
-
-    envoyer("test", (char**)&outputBuffer);
-
-    // sprintf(outputBuffer, "bonjour");
-
-    printf("xxx%sxxx\n", outputBuffer); //debug
-
-    nettoyer(); // on arrive jamais ici si le prog a une boucle infinie
+	initialiser(&fd_ecriture, &fd_lecture, argv);
+    envoyer("test\n", strlen("test\n"), outputBuffer);
+    printf("%s\n", outputBuffer);
 }
 
 void initialiser(int* inputFd, int* outputFd, char** prog)
 {
-    int parentPipe[2];
-    pipe(parentPipe);
+    /* contient fd_ecriture en entrée et la stdin du child en sortie */
+    int input_pipe[2];
+    pipe(input_pipe);
 
-    int childPipe[2];
-    pipe(childPipe);
+    /* contient la stdout du child en entrée et fd_lecture en sortie */
+    int output_pipe[2];
+    pipe(output_pipe);
     
 	pid_t c_pid = fork();
-    if(c_pid == 0) 
-    { 
+    if(c_pid == 0)
+    {
         /* child process */
 
         // on libere stdout pour qu'il soit pris dans le dup (lowest fd nb)
 		close(STDOUT);
-        // on duplique stdout vers le stdout du processus parent
-		dup(parentPipe[STDOUT]);
+        // on duplique stdout en entrée du pipe input_pipe
+        dup(output_pipe[0]);
         // on libere stdin pour qu'il soit pris dans le dup (lowest fd nb)
 		close(STDIN);
-        // on duplique stdin vers le stdin du processus enfant
-		dup(childPipe[STDIN]);
+        // on duplique stdin en sortie du pipe output_pipe
+        dup(input_pipe[1]);
 
         /* on libère les file descriptors */
-		close(parentPipe[STDIN]);
-		close(parentPipe[STDOUT]);
-		close(childPipe[STDIN]);
-		close(childPipe[STDOUT]);
+        close(input_pipe[0]);
+		close(input_pipe[1]);
+        close(output_pipe[0]);
+        close(output_pipe[1]);
 
-        // on lance le programme avec ses arguments
+        // on execute le programme avec ses arguments
 		execvp(prog[1], &prog[1]);
 	}
     else if(c_pid > 0)
     {
 		/* parent process */
 
-        // on affecte la stdout du processus enfant à l'input fd
-		*inputFd = childPipe[STDOUT];
-        // on affecte la stdin du processus parent à l'output fd
-		*outputFd = parentPipe[STDIN];
+        // on associe l'entrée du pipe input au fd d'input
+        *inputFd = input_pipe[0];
+        // on associe la sortie du pipe output au fd d'output
+        *outputFd = output_pipe[1];
 
         /* on libère les file descriptors */
-		close(parentPipe[STDOUT]);
-		close(childPipe[STDIN]);
+		close(input_pipe[1]);
+        close(output_pipe[0]);
+
+        // // on attend que le processus fils se termine
+        // wait(NULL);
     }
     else
     {
@@ -78,17 +78,8 @@ void initialiser(int* inputFd, int* outputFd, char** prog)
     }
 }
 
-void envoyer(const char* input, char** output)
+void envoyer(const char* msg, int msgLen, char* output)
 {
-    // on écrit l'input dans le file desc correspondant
-    write(inputFd, input, strlen(input));
-    // on lit l'output depuis le file desc correspondant
-	read(outputFd, output, OUTPUT_BUFFER_LEN);
-}
-
-void nettoyer()
-{
-    /* on libère les file descriptors */
-    close(inputFd);
-	close(outputFd);
+	write(fd_ecriture, msg, msgLen);
+	read(fd_lecture, output, OUTPUT_BUFFER_LEN);
 }

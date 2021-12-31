@@ -11,3 +11,22 @@ et retourne sa réponse en message TCP.
 
 Je comprends pas pourquoi la ligne 86 de newserver.c
 fait que le programme freeze.
+
+
+
+
+Je lance la commande suivante:
+$ ./souket ./echo
+
+Ce qui va lancer le programme './echo' dans un processus fils
+(boucle infinie). Tous les paquets TCP adressés au port 9191
+vont être redigigés dans la stdin du processus fils et vont
+retourner en résultat la stdout du processus fils.
+
+
+
+parentPipe[0] <- outputFd    (devrait être la stdin du parent process)
+parentPipe[1] <- stdout du child process
+
+childPipe[0] <- stdin du child process
+childPipe[1] <- inputFd     (devrait être la stdout du parent process²)
