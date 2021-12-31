@@ -20,7 +20,9 @@ int main(int argc, char* argv[])
 
     envoyer("test", (char**)&outputBuffer);
 
-    printf("%s", outputBuffer); //debug
+    // sprintf(outputBuffer, "bonjour");
+
+    printf("xxx%sxxx\n", outputBuffer); //debug
 
     nettoyer(); // on arrive jamais ici si le prog a une boucle infinie
 }

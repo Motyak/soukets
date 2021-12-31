@@ -6,3 +6,8 @@ Il sera passé en argument du serveur TCP.
 Faire un serveur tcp qui prend en argument le programme principal,
 qui va rediriger tous les messages TCP reçus vers le programme principal
 et retourne sa réponse en message TCP.
+
+
+
+Je comprends pas pourquoi la ligne 86 de newserver.c
+fait que le programme freeze.
