@@ -40,11 +40,11 @@ void initialiser(int* inputFd, int* outputFd, char** prog)
         // on libere stdout pour qu'il soit pris dans le dup (lowest fd nb)
 		close(STDOUT);
         // on duplique stdout en entrée du pipe input_pipe
-        dup(output_pipe[0]);
+        dup(output_pipe[1]);
         // on libere stdin pour qu'il soit pris dans le dup (lowest fd nb)
 		close(STDIN);
         // on duplique stdin en sortie du pipe output_pipe
-        dup(input_pipe[1]);
+        dup(input_pipe[0]);
 
         /* on libère les file descriptors */
         close(input_pipe[0]);
@@ -60,13 +60,14 @@ void initialiser(int* inputFd, int* outputFd, char** prog)
 		/* parent process */
 
         // on associe l'entrée du pipe input au fd d'input
-        *inputFd = input_pipe[0];
+        *inputFd = input_pipe[1];
         // on associe la sortie du pipe output au fd d'output
-        *outputFd = output_pipe[1];
+        *outputFd = output_pipe[0];
 
         /* on libère les file descriptors */
-		close(input_pipe[1]);
-        close(output_pipe[0]);
+		close(input_pipe[0]);
+        close(output_pipe[1]);
+
 
         // // on attend que le processus fils se termine
         // wait(NULL);
@@ -81,5 +82,6 @@ void initialiser(int* inputFd, int* outputFd, char** prog)
 void envoyer(const char* msg, int msgLen, char* output)
 {
 	write(fd_ecriture, msg, msgLen);
+    close(fd_ecriture);
 	read(fd_lecture, output, OUTPUT_BUFFER_LEN);
 }
