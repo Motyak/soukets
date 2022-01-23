@@ -3,10 +3,15 @@
 // g++ echo.cpp -o echo
 int main()
 {
-    std::string input;
+    std::string input, line;
+
     while(true)
     {
-        std:getline(std::cin, input);
+        while (std::getline(std::cin, line))
+            input += '\n' + line;
+    
         std::cout << input << std::endl;
+        std::cin.clear();
+        input = "";
     }
 }
