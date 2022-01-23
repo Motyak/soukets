@@ -12,6 +12,7 @@ int main()
     
         std::cout << input << std::endl;
         std::cin.clear();
+        std::clearerr(stdin);
         input = "";
     }
 }

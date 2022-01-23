@@ -61,9 +61,9 @@ void initialiser(int* inputFd, int* outputFd, char** prog)
     {
 		/* parent process */
 
-        // on associe la sortie du pipe input au fd d'input
+        // on associe l'entrée du pipe input au fd d'input
         *inputFd = input_pipe[IN];
-        // on associe l'entrée du pipe output au fd d'output
+        // on associe la sortie du pipe output au fd d'output
         *outputFd = output_pipe[OUT];
 
         /* on libère les file descriptors */
@@ -83,6 +83,6 @@ void initialiser(int* inputFd, int* outputFd, char** prog)
 void envoyer(const char* msg, int msgLen, char* output)
 {
 	write(fd_ecriture, msg, msgLen);
-    close(fd_ecriture);
+    // close(fd_ecriture);
 	read(fd_lecture, output, OUTPUT_BUFFER_LEN);
 }
