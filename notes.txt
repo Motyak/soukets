@@ -1,32 +1,25 @@
-Programme principal: 
-Un fichier binaire executable qui en boucle va attendre une input
-de stdin, process un resultat et retourner le resultat dans la stdout.
-Il sera passé en argument du serveur TCP.
+Le programme echo demande une saisie clavier qui peut contenir des sauts de lignes,
+la saisie se termine par l'utilisateur en envoyant un signal EOT (via ^D) suite à cela
+l'input utilisateur sera redirigé dans la sortie standard puis le programme se remettra
+à demander une saisie clavier, etc.. (boucle infinie)
 
-Faire un serveur tcp qui prend en argument le programme principal,
-qui va rediriger tous les messages TCP reçus vers le programme principal
-et retourne sa réponse en message TCP.
+Le but est de faire en sorte que soukets puisse fork un processus fils
+dans lequel est executé le programme echo, et faire en sorte de pouvoir communiquer
+avec le programme echo depuis le processus parent (programme principal) en passant
+par un pipe et des file descriptors. 
 
+Le but final est d'ouvrir un socket tcp pour que les messages TCP reçus soient
+rediriger vers le processus fils et on retournerait le résultat produit.
 
+(Ca va être dur mais..)
+Je voudrais faire en sorte que chaque programme puisse être utilisé indépendamment, 
+par exemple le programme echo n'a pas besoin de soukets pour fonctionner, tout comme
+on peut utiliser soukets avec d'autres programme que echo, mais on peut combiner leur
+utilisation.
 
-Je comprends pas pourquoi la ligne 86 de newserver.c
-fait que le programme freeze.
-
-
-
-
-Je lance la commande suivante:
-$ ./souket ./echo
-
-Ce qui va lancer le programme './echo' dans un processus fils
-(boucle infinie). Tous les paquets TCP adressés au port 9191
-vont être redigigés dans la stdin du processus fils et vont
-retourner en résultat la stdout du processus fils.
+Pour l'instant on fait de soukets un serveur monoclient mais peut-être qu'on pourra
+faire un système multiclient en mode pub/sub avec plusieurs canaux de communication,
+etc..
 
 
 
-parentPipe[0] <- outputFd    (devrait être la stdin du parent process)
-parentPipe[1] <- stdout du child process
-
-childPipe[0] <- stdin du child process
-childPipe[1] <- inputFd     (devrait être la stdout du parent process²)
