@@ -18,7 +18,7 @@ char outputBuffer[OUTPUT_BUFFER_LEN];
 // ./newserver ./echo
 int main(int argc, char* argv[])
 {
-	initialiser(&fd_ecriture, &fd_lecture, argv);
+    initialiser(&fd_ecriture, &fd_lecture, argv);
     // envoyer("test\n" + (char)4, sizeof("test\n" + (char)4), outputBuffer);
     envoyer("test\n", sizeof("test\n"), outputBuffer);
     printf("%s", outputBuffer);
@@ -42,7 +42,7 @@ void initialiser(int* inputFd, int* outputFd, char** prog)
         exit(-1);
     }
     
-	pid_t c_pid = fork();
+    pid_t c_pid = fork();
     if(c_pid == 0)
     {
         /* child process */
@@ -52,26 +52,26 @@ void initialiser(int* inputFd, int* outputFd, char** prog)
         close(output_pipe[OUT]);
 
         // on libere stdout pour qu'il soit pris dans le dup (lowest fd nb)
-		close(STDOUT);
+        close(STDOUT);
         // on duplique stdout en entrée du pipe output_pipe
         dup(output_pipe[IN]);
         // on libere stdin pour qu'il soit pris dans le dup (lowest fd nb)
-		close(STDIN);
+        close(STDIN);
         // on duplique stdin en sortie du pipe input_pipe
         dup(input_pipe[OUT]);
 
         // /* on libère les file descriptors */
         // close(input_pipe[0]);
-		// close(input_pipe[1]);
+        // close(input_pipe[1]);
         // close(output_pipe[0]);
         // close(output_pipe[1]);
 
         // on execute le programme avec ses arguments
-		execvp(prog[1], &prog[1]);
-	}
+        execvp(prog[1], &prog[1]);
+    }
     else if(c_pid > 0)
     {
-		/* parent process */
+        /* parent process */
 
         /* on ferme les fd dont on ne se sert pas */
         close(input_pipe[OUT]);
@@ -81,21 +81,21 @@ void initialiser(int* inputFd, int* outputFd, char** prog)
         *inputFd = input_pipe[IN];
         // on associe la sortie du pipe output au fd d'output
         *outputFd = output_pipe[OUT];
-		
+        
         // // on attend que le processus fils se termine
         // wait(NULL);
     }
     else
     {
-		perror("fork() error");
-		exit(-1);
+        perror("fork() error");
+        exit(-1);
     }
 }
 
 void envoyer(const char* msg, size_t msgLen, char* output)
 {
     /* on redirige le message vers le processus fils */
-	if(write(fd_ecriture, msg, msgLen) == -1)
+    if(write(fd_ecriture, msg, msgLen) == -1)
     {
         perror("write() error");
         exit(-1);
@@ -103,7 +103,7 @@ void envoyer(const char* msg, size_t msgLen, char* output)
     close(fd_ecriture);
 
     /* on copie la réponse du processus fils */
-	if(read(fd_lecture, output, OUTPUT_BUFFER_LEN) == -1)
+    if(read(fd_lecture, output, OUTPUT_BUFFER_LEN) == -1)
     {
         perror("read() error");
         exit(-1);
