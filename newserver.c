@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
+#include <signal.h>
 // #include <sys/wait.h>
 
 #define OUTPUT_BUFFER_LEN 256UL
@@ -9,22 +10,31 @@
 enum FileDesc { STDIN, STDOUT, STDERR };
 enum PipeSide {OUT, IN};
 
-void initialiser(int* inputFd, int* outputFd, char** prog);
+void initialiser(pid_t* c_pid, int* inputFd, int* outputFd, char** prog);
 void envoyer(const char* msg, size_t msgLen, char* output);
+void nettoyer();
 
+const char* EOT_CHAR = "" + (char)4;
+
+pid_t subprocess;
 int fd_ecriture, fd_lecture;
 char outputBuffer[OUTPUT_BUFFER_LEN];
 
 // ./newserver ./echo
 int main(int argc, char* argv[])
 {
-    initialiser(&fd_ecriture, &fd_lecture, argv);
-    // envoyer("test\n" + (char)4, sizeof("test\n" + (char)4), outputBuffer);
-    envoyer("test\n", sizeof("test\n"), outputBuffer);
-    printf("%s", outputBuffer);
+    initialiser(&subprocess, &fd_ecriture, &fd_lecture, argv);
+
+    // const char* msg = "bonjour\na\n\ntous\n";
+    const char* msg = "bonjour";
+    envoyer(msg, sizeof(msg), outputBuffer);
+
+    printf(">%s<", outputBuffer);
+
+    nettoyer();
 }
 
-void initialiser(int* inputFd, int* outputFd, char** prog)
+void initialiser(pid_t* c_pid, int* inputFd, int* outputFd, char** prog)
 {
     /* contient fd_ecriture en entrée et la stdin du child en sortie */
     int input_pipe[2];
@@ -42,8 +52,8 @@ void initialiser(int* inputFd, int* outputFd, char** prog)
         exit(-1);
     }
     
-    pid_t c_pid = fork();
-    if(c_pid == 0)
+    *c_pid = fork();
+    if(*c_pid == 0)
     {
         /* child process */
 
@@ -60,16 +70,10 @@ void initialiser(int* inputFd, int* outputFd, char** prog)
         // on duplique stdin en sortie du pipe input_pipe
         dup(input_pipe[OUT]);
 
-        // /* on libère les file descriptors */
-        // close(input_pipe[0]);
-        // close(input_pipe[1]);
-        // close(output_pipe[0]);
-        // close(output_pipe[1]);
-
         // on execute le programme avec ses arguments
         execvp(prog[1], &prog[1]);
     }
-    else if(c_pid > 0)
+    else if(*c_pid > 0)
     {
         /* parent process */
 
@@ -102,11 +106,26 @@ void envoyer(const char* msg, size_t msgLen, char* output)
     }
     close(fd_ecriture);
 
+    /* ask to flush the input buffer without closing the file descriptor */
+    // if(write(fd_ecriture, EOT_CHAR, sizeof(EOT_CHAR)) == -1)
+    // {
+    //     perror("write() error");
+    //     exit(-1);
+    // }
+    
+    // lseek(fd_ecriture, 0, SEEK_END);
+
     /* on copie la réponse du processus fils */
     if(read(fd_lecture, output, OUTPUT_BUFFER_LEN) == -1)
     {
         perror("read() error");
         exit(-1);
     }
+}
+
+void nettoyer()
+{
+    close(fd_ecriture);
     close(fd_lecture);
+    kill(subprocess, SIGKILL);
 }

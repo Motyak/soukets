@@ -21,5 +21,45 @@ Pour l'instant on fait de soukets un serveur monoclient mais peut-être qu'on po
 faire un système multiclient en mode pub/sub avec plusieurs canaux de communication,
 etc..
 
+______________________________________
 
+Bon on va simplement envoyer un signal au child process dans la
+fonction envoyer à la fin du message.
+
+Puis on fera une fonction nettoyer pour close les fd et
+kill le child process (plutôt qu'il se terminate via la terminaison
+du parent car on sait jamais)
+
+on fait le signal ^D n'existe pas, c'est un EOF qui
+signifie "flush the input i've typed so far".
+
+n Unix, the end-of-file character (by default EOT) causes the terminal 
+driver to make available all characters in its input buffer immediately; 
+normally the driver would collect characters until it sees an end-of-line 
+character.
+
+close(stream) faisait le flush automatiquement, c'est pour ça
+qu'on était obligé de l'utiliser. Mais nous maintenant ce qu'on veut
+c'est comprendre comment faire un flush manuel pour pouvoir faire
+des flush à la fin de chaque message sans pour autant fermer
+le stream.
+
+______________________________________
+
+In Unix, the end-of-file character (by default EOT) causes the terminal driver to make available all characters in its input buffer immediately; normally the driver would collect characters until it sees an end-of-line character. If the input buffer is empty (because no characters have been typed since the last end-of-line or end-of-file), a program reading from the terminal reads a count of zero bytes
+
+Input from a terminal never really "ends" (unless the device is disconnected), but it is useful to enter more than one "file" into a terminal, so a key sequence is reserved to indicate end of input. In UNIX the translation of the keystroke to EOF is performed by the terminal driver, so a program does not need to distinguish terminals from other input files. By default, the driver converts a Control-D character at the start of a line into an end-of-file indicator. To insert an actual Control-D (ASCII 04) character into the input stream, the user precedes it with a "quote" command character (usually Control-V). AmigaDOS is similar but uses Control-\ instead of Control-D.
+
+______________________________________
+
+Donc à l'heure actuelle ma fonction envoyer ne marche que
+si je close le file descriptor d'écriture.
+Mais si je fais ça je peux plus communiquer avec mon processus fils,
+du coup j'ai essayé d'envoyer le caractère EOT mais ça n'est pas suffisant
+pour indiquer qu'on veut flush le buffer pour que ça copie les données en attente.
+
+./echo fonctionne comme attendu, on peut mettre des messages de plusieurs
+lignes et avec ^D on peut traiter l'input puis en retaper une autre à l'infini.
+
+Mais ./newserver ./echo ne marche pas comme attendu.
 
