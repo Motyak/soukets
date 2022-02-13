@@ -8,9 +8,6 @@
 
 #define OUTPUT_BUFFER_LEN 256UL
 
-enum FileDesc { STDIN, STDOUT, STDERR };
-enum PipeSide {OUT, IN};
-
 void initialiser(int* master_fd, int* slave_fd, pid_t* child_pid, char** prog);
 void envoyer(const char* msg, size_t msgLen, char* output);
 void nettoyer();
@@ -21,13 +18,16 @@ int mfd, sfd;
 pid_t c_pid;
 char outputBuffer[OUTPUT_BUFFER_LEN];
 
-/* ./newserver ./echo
-*  gcc newserver.c -o newserver -lutil */
+/* 
+gcc newserver.c -o newserver -lutil
+./newserver ./echo
+*/
 int main(int argc, char* argv[])
 {
     initialiser(&mfd, &sfd, &c_pid, argv);
 
     const char* msg = "salut\na\n\ntous\n\x4";
+    // const char* msg = "salut\x4";
     envoyer(msg, sizeof(msg), outputBuffer);
 
     printf(">%s<", outputBuffer);
@@ -45,35 +45,36 @@ void initialiser(int* master_fd, int* slave_fd, pid_t* child_pid, char** prog)
 
     *child_pid = fork();
 
-    if(*child_pid == -1)
+    switch(*child_pid)
     {
-        perror("fork() error");
-        exit(EX_OSERR);
-    }
-
-    if(*child_pid == 0)
-    {
-        /* child process */
-
-        // on ferme le fd qu'on utilise pas
-        close(*master_fd);
-        
-        /* on ouvre le pty slave dans le processus fils */
-        if(login_tty(*slave_fd) != 0)
-        {
-            perror("login_tty() failed");
+        /* error on fork() */
+        case -1:
+            close(*master_fd);
+            close(*slave_fd);
+            perror("fork() error");
             exit(EX_OSERR);
-        }
 
-        // on execute le programme avec ses arguments
-        execvp(prog[1], prog + 1);
+        /* child process */
+        case 0:
+            // on ferme le fd qu'on utilise pas
+            close(*master_fd);
+            
+            /* on ouvre le pty slave dans le processus fils */
+            if(login_tty(*slave_fd) != 0)
+            {
+                perror("login_tty() failed");
+                exit(EX_OSERR);
+            }
 
-        perror("execvp() failed");
-        exit(EX_OSERR);
-    }
+            // on execute le programme avec ses arguments
+            execvp(prog[1], prog + 1);
 
-    {
+            perror("execvp() failed");
+            exit(EX_OSERR);
+
         /* parent process */
+        default:
+            ;
     }
 }
 

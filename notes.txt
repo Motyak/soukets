@@ -63,3 +63,13 @@ lignes et avec ^D on peut traiter l'input puis en retaper une autre à l'infini.
 
 Mais ./newserver ./echo ne marche pas comme attendu.
 
+______________________________________
+
+Pour l'instant le fait d'envoyer "salut" bloque le programme, alors que
+le fait d'envoyer "salut\x4" permet d'envoyer le message 'salut' et de le traiter.
+
+Faudra faire en sorte que la fonction envoyer append à l'output buffer
+plutôt que d'écraser son contenu.
+Mais d'abord faudrait faire fonctionner l'envoi d'un message multiligne tel que :
+"salut\na\n\ntous\n\x4"
+
