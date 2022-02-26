@@ -73,3 +73,30 @@ plutôt que d'écraser son contenu.
 Mais d'abord faudrait faire fonctionner l'envoi d'un message multiligne tel que :
 "salut\na\n\ntous\n\x4"
 
+
+______________________________________
+
+https://stackoverflow.com/questions/63509816/how-to-insert-newline-n-in-terminal-input-with-keyboard-properly
+Dans un terminal, le caractère LF (\n) permet d'envoyer la buffered input.
+Hors on ne veut pas envoyer la buffered input tout de suite mais à la place
+ajouter un '\n' dans la buffered input et uniquement copier l'input lorsqu'un
+caractère EOT ('\x4') est envoyé.
+=> Cela n'est à priori pas possible
+
+La solution serait d'implémenter son propre système de buffer (à la place de
+celui du terminal). Mais dans notre cas cela ne convient pas car on veut
+que les programmes fils soient les plus simples possibles (pas de fioritures
+ou de hacks).
+
+On pourrait aussi trouver un hack pour faire en sorte que les '\n' ne soient
+pas interprétées comme instruction pour copier le buffer au moment de la
+réception.
+
+DU COUP
+Le hack ça serait qu'au moment d'écrire les '\n' dans le terminal, 
+on disable le paramètre 'echo' puis on utilise la fonction 'ioctl'
+pour envoyer le newline/EOL puis on réactive le paramètre 'echo' du
+terminal.
+=> Pour disable l'echo il faut juste set les paramètres VMIN et VTIME
+du terminal (termios) à 0. Puis ensuite faudra les restaurer à leurs
+valeurs originelles.

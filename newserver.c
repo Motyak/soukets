@@ -5,17 +5,21 @@
 #include <utmp.h>
 #include <sysexits.h>
 #include <signal.h>
+#include <string.h>
+#include <termios.h>
 
 #define OUTPUT_BUFFER_LEN 256UL
 
 void initialiser(int* master_fd, int* slave_fd, pid_t* child_pid, char** prog);
-void envoyer(const char* msg, size_t msgLen, char* output);
+void envoyer(const char* msg, size_t msgLen);
+void traiter(char* output);
 void nettoyer();
 
 // master and slave pty fd
 int mfd, sfd;
 // child process pid
 pid_t c_pid;
+
 char outputBuffer[OUTPUT_BUFFER_LEN];
 
 /* 
@@ -26,18 +30,22 @@ int main(int argc, char* argv[])
 {
     initialiser(&mfd, &sfd, &c_pid, argv);
 
-    const char* msg = "salut\na\n\ntous\n\x4";
-    // const char* msg = "salut\x4";
-    envoyer(msg, sizeof(msg), outputBuffer);
+    const char* msg = "salut\na\n\ntous";
+    envoyer(msg, strlen(msg));
+
+    traiter(outputBuffer);
 
     printf(">%s<", outputBuffer);
 
     nettoyer();
+
+    exit(EX_OK);
 }
 
 void initialiser(int* master_fd, int* slave_fd, pid_t* child_pid, char** prog)
 {
-    if(openpty(master_fd, slave_fd, NULL, NULL, NULL) == -1)
+    struct termios pty;
+    if(openpty(master_fd, slave_fd, NULL, &pty, NULL) == -1)
     {
         perror("openpty() error");
         exit(EX_OSERR);
@@ -78,10 +86,19 @@ void initialiser(int* master_fd, int* slave_fd, pid_t* child_pid, char** prog)
     }
 }
 
-void envoyer(const char* msg, size_t msgLen, char* output)
+void envoyer(const char* msg, size_t msgLen)
 {
-    /* on redirige le message vers le processus fils */
     if(write(mfd, msg, msgLen) == -1)
+    {
+        perror("write() error");
+        exit(EX_IOERR);
+    }
+}
+
+void traiter(char* output)
+{
+    /* on signale la fin d'input */
+    if(write(mfd, "\x4", sizeof("\x4")) == -1)
     {
         perror("write() error");
         exit(EX_IOERR);

@@ -1,6 +1,5 @@
 #include <iostream>
 
-// g++ echo.cpp -o echo
 int main()
 {
     std::string input, line;
@@ -9,8 +8,8 @@ int main()
     {
         while (std::getline(std::cin, line))
             input += '\n' + line;
-    
-        std::cout << input << std::endl;
+
+        std::cout << input;
         std::cin.clear();
         std::clearerr(stdin);
         input = "";
