@@ -8,7 +8,11 @@
 #include <string.h>
 #include <termios.h>
 
-#define OUTPUT_BUFFER_LEN 256UL
+#include <unistd.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+
+#define BUFFER_LEN 256UL
 
 void initialiser(int* master_fd, int* slave_fd, pid_t* child_pid, char** prog);
 void envoyer(const char* msg, size_t msgLen);
@@ -17,10 +21,12 @@ void nettoyer();
 
 // master and slave pty fd
 int mfd, sfd;
+
 // child process pid
 pid_t c_pid;
 
-char outputBuffer[OUTPUT_BUFFER_LEN];
+char inputBuffer[BUFFER_LEN];
+char outputBuffer[BUFFER_LEN];
 
 /* 
 gcc newserver.c -o newserver -lutil
@@ -28,16 +34,91 @@ gcc newserver.c -o newserver -lutil
 */
 int main(int argc, char* argv[])
 {
+    // initialiser(&mfd, &sfd, &c_pid, argv);
+
+    // const char* msg = "salut\na\n\ntous";
+    // envoyer(msg, strlen(msg));
+
+    // traiter(outputBuffer);
+
+    // printf(">%s<", outputBuffer);
+
+    // nettoyer();
+
+    // exit(EX_OK);
+
+
+    
+
+    /* create a socket */
+    // AF_INET      IPv4 Internet protocols
+    // SOCK_STREAM  Provides sequenced, reliable, two-way, connection-based byte streams
+    // The protocol specifies a particular protocol to be used with the socket
+    int sock = socket(AF_INET, SOCK_STREAM, 0);
+    if (sock == -1)
+    {
+        perror("socket() error");
+        exit(EX_OSERR);
+    }
+
+    /* specify an address for the socket */
+    struct sockaddr_in addr;
+    addr.sin_family = AF_INET;
+    addr.sin_addr.s_addr = INADDR_ANY;
+    addr.sin_port = htons(9191);
+
+    /* bind the socket to our specified IP and port */
+    if(bind(sock, (struct sockaddr*)&addr, sizeof(addr)) == -1)
+    {
+        perror("bind() error");
+        exit(EX_OSERR);
+    }
+
+    // initialize subprocess communication
     initialiser(&mfd, &sfd, &c_pid, argv);
 
-    const char* msg = "salut\na\n\ntous";
-    envoyer(msg, strlen(msg));
+    /* prepare to accept a single connection at a time */
+    if(listen(sock, 1) == -1)
+    {
+        perror("listen() error");
+        exit(EX_OSERR);
+    }
 
+    /* await a connection on the socket */
+    int client_socket = accept(sock, NULL, NULL);
+    if(client_socket == -1)
+    {
+        perror("accept() error");
+        exit(EX_OSERR);
+    }
+
+    /* receive tcp message from client */
+    if(recv(client_socket, inputBuffer, BUFFER_LEN, 0) == -1)
+    {
+        perror("recv() error");
+        exit(EX_OSERR);
+    }
+
+    printf(">%s<\n", inputBuffer); //debug
+
+    envoyer(inputBuffer, strlen(inputBuffer));
     traiter(outputBuffer);
 
-    printf(">%s<", outputBuffer);
+    printf(">%s<", outputBuffer); //debug
 
+    // /* send response back to client */
+    // if(send(client_socket, outputBuffer, strlen(outputBuffer), 0) == -1)
+    // {
+    //     perror("send() error");
+    //     exit(EX_OSERR);
+    // }
+
+    // close fds and kill subprocess
     nettoyer();
+
+    /* close sockets */
+    close(client_socket);
+    close(sock);
 
     exit(EX_OK);
 }
@@ -105,7 +186,7 @@ void traiter(char* output)
     }
 
     /* on copie la réponse du processus fils */
-    if(read(sfd, output, OUTPUT_BUFFER_LEN) == -1)
+    if(read(sfd, output, BUFFER_LEN) == -1)
     {
         perror("read() error");
         exit(EX_IOERR);
